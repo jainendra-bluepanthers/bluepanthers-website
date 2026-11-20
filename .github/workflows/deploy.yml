@@ -1,0 +1,34 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Fail if someone edited src/pages but forgot to run build.py before committing.
+      - name: Check generated pages are up to date
+        run: |
+          python3 build.py
+          git diff --exit-code || { echo "::error::Generated pages are out of date. Run 'python3 build.py' and commit the result."; exit 1; }
+
+      - name: Trigger Render deploy
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          test -n "$HOOK" || { echo "::error::RENDER_DEPLOY_HOOK secret is missing"; exit 1; }
+          curl -fsS -X POST "$HOOK" > /dev/null
+          echo "Render deploy triggered"
