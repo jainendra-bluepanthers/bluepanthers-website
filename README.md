@@ -3,11 +3,12 @@
 Source for https://bluepanthers.in — a static site (HTML + CSS + vanilla JS), hosted on GitHub Pages.
 
 ## Structure
-- `index.html` — the whole site (hero, opportunity, products, process, plant, values, team, contact)
-- `assets/css/site.css`, `assets/js/site.js` — styles and behaviour
+- `src/pages/*.html` — page content (front matter: title, description, slug)
+- `build.py` — wraps each page in the shared header/nav/footer and writes `<slug>/index.html` + `sitemap.xml`
+- `assets/css/site.css`, `assets/js/site.js` — styles, menus, forms (Formspree endpoint in site.js)
 - `assets/img/` — logo and favicon
-- `netlify.toml` — headers, caching, www → apex redirect
-- Enquiry form posts to Formspree (`FORM_ENDPOINT` in `assets/js/site.js`)
+
+**Edit pages in `src/pages/`, then run `python3 build.py`.** Never edit the generated `*/index.html` files directly.
 
 ## Deploy
 Work on a branch; merge to `main` only after approval. Every push to `main` deploys automatically via GitHub Pages.

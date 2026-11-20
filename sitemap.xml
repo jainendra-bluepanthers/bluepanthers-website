@@ -1,4 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://bluepanthers.in/</loc><lastmod>2026-11-20</lastmod></url>
+  <url><loc>https://bluepanthers.in/</loc></url>
+  <url><loc>https://bluepanthers.in/about/</loc></url>
+  <url><loc>https://bluepanthers.in/contact/</loc></url>
+  <url><loc>https://bluepanthers.in/engagement/</loc></url>
+  <url><loc>https://bluepanthers.in/export-markets/</loc></url>
+  <url><loc>https://bluepanthers.in/food-safety-validation/</loc></url>
+  <url><loc>https://bluepanthers.in/india-fssai/</loc></url>
+  <url><loc>https://bluepanthers.in/manufacturing/</loc></url>
+  <url><loc>https://bluepanthers.in/partners/</loc></url>
+  <url><loc>https://bluepanthers.in/process-authority/</loc></url>
+  <url><loc>https://bluepanthers.in/process-authority/checklist/</loc></url>
+  <url><loc>https://bluepanthers.in/product-process-development/</loc></url>
+  <url><loc>https://bluepanthers.in/regulatory-labelling/</loc></url>
+  <url><loc>https://bluepanthers.in/start/</loc></url>
+  <url><loc>https://bluepanthers.in/team/</loc></url>
+  <url><loc>https://bluepanthers.in/us-fda/</loc></url>
 </urlset>
