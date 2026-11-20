@@ -24,44 +24,54 @@ COMPANY = "Blue Panthers Manufacturing Private Limited"
 EMAIL = "jainendra@bluepanthers.in"
 
 NAV = [
-    ("Services", None, [
-        ("Process Authority", "/process-authority/"),
-        ("Review checklist", "/process-authority/checklist/"),
-        ("Food safety & validation", "/food-safety-validation/"),
-        ("Regulatory & labelling", "/regulatory-labelling/"),
-        ("Product & process development", "/product-process-development/"),
+    ("Products", None, [
+        ("All products", "/products/"),
+        ("Amla powder", "/products/amla/"),
+        ("Beetroot powder", "/products/beetroot/"),
+        ("Chia oil & protein", "/products/chia/"),
+        ("Moringa leaf powder", "/products/moringa/"),
     ]),
-    ("Regulatory", None, [
-        ("India · FSSAI", "/india-fssai/"),
-        ("United States · FDA", "/us-fda/"),
-        ("Export markets", "/export-markets/"),
-    ]),
-    ("Manufacturing", "/manufacturing/", None),
-    ("Engagement", "/engagement/", None),
+    ("Plant & process", "/plant/", None),
+    ("Quality", "/quality/", None),
+    ("Sustainability", "/sustainability/", None),
     ("Company", None, [
         ("About", "/about/"),
-        ("Team & research profiles", "/team/"),
+        ("Team", "/team/"),
         ("Partner companies", "/partners/"),
         ("Contact", "/contact/"),
+    ]),
+    ("Consulting", None, [
+        ("Consulting overview", "/consulting/"),
+        ("Process Authority", "/consulting/process-authority/"),
+        ("Food safety & validation", "/consulting/food-safety-validation/"),
+        ("Regulatory & labelling", "/consulting/regulatory-labelling/"),
+        ("Product & process development", "/consulting/product-process-development/"),
+        ("India · FSSAI", "/consulting/india-fssai/"),
+        ("United States · FDA", "/consulting/us-fda/"),
+        ("Export markets", "/consulting/export-markets/"),
+        ("Engagement & fees", "/consulting/engagement/"),
+        ("Start a review", "/consulting/start/"),
     ]),
 ]
 
 FOOTER_COLS = [
-    ("Regulatory pathways", [
-        ("India · FSSAI", "/india-fssai/"),
-        ("United States · FDA", "/us-fda/"),
-        ("Export markets", "/export-markets/"),
-        ("Process Authority", "/process-authority/"),
-        ("Review checklist", "/process-authority/checklist/"),
-        ("Engagement & fees", "/engagement/"),
+    ("Manufacturing", [
+        ("Products", "/products/"),
+        ("Amla powder", "/products/amla/"),
+        ("Beetroot powder", "/products/beetroot/"),
+        ("Chia oil & protein", "/products/chia/"),
+        ("Moringa leaf powder", "/products/moringa/"),
+        ("Plant & process", "/plant/"),
+        ("Quality", "/quality/"),
+        ("Sustainability", "/sustainability/"),
     ]),
-    ("More", [
-        ("Food safety & validation", "/food-safety-validation/"),
-        ("Regulatory & labelling", "/regulatory-labelling/"),
-        ("Product & process development", "/product-process-development/"),
-        ("Manufacturing & ingredients", "/manufacturing/"),
-        ("Team & research profiles", "/team/"),
-        ("Partner companies", "/partners/"),
+    ("Consulting", [
+        ("Consulting overview", "/consulting/"),
+        ("Process Authority", "/consulting/process-authority/"),
+        ("India · FSSAI", "/consulting/india-fssai/"),
+        ("United States · FDA", "/consulting/us-fda/"),
+        ("Export markets", "/consulting/export-markets/"),
+        ("Start a review", "/consulting/start/"),
     ]),
 ]
 
@@ -107,15 +117,16 @@ def footer_html():
       <div class="footer-brand">
         <div class="mark">BP</div>
         <h3>Blue Panthers India</h3>
-        <p>Food process, regulatory and manufacturing partner for Indian food and beverage companies serving India, the United States and export markets.</p>
+        <p>Value-added functional ingredients from Indian crops, made in Uttar Pradesh for food, beverage and nutrition brands in India and abroad.</p>
       </div>
       {cols}
       <div>
         <h4>Contact</h4>
         <ul>
           <li><a href="mailto:{EMAIL}">{EMAIL}</a></li>
-          <li><a href="/start/">Start a review</a></li>
           <li><a href="/contact/">Contact form</a></li>
+          <li><a href="/about/">About us</a></li>
+          <li><a href="/team/">Team</a></li>
           <li>Uttar Pradesh, India<br>Consultations by appointment</li>
         </ul>
       </div>
@@ -130,7 +141,7 @@ def footer_html():
 
 def page_html(meta, current):
     title = meta["title"]
-    full_title = "Blue Panthers India | Food process, regulatory & manufacturing" if current == "/" else f"{title} | Blue Panthers India"
+    full_title = "Blue Panthers India | Functional food ingredients from Indian crops" if current == "/" else f"{title} | Blue Panthers India"
     desc = html.escape(meta["description"], quote=True)
     url = SITE + current
     return f"""<!doctype html>
@@ -161,12 +172,12 @@ def page_html(meta, current):
   <div class="wrap header-inner">
     <a class="brand" href="/" aria-label="Blue Panthers India, home">
       <img src="/assets/img/logo.png" alt="" width="46" height="44">
-      <span class="brand-name"><strong>Blue Panthers</strong><small>Food Process · India</small></span>
+      <span class="brand-name"><strong>Blue Panthers</strong><small>Food Ingredients · India</small></span>
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Open menu"><span></span><span></span><span></span></button>
     <nav class="nav" id="nav" aria-label="Main">
       <ul>{nav_html(current)}</ul>
-      <a class="btn nav-cta" href="/start/">Start a review</a>
+      <a class="btn nav-cta" href="/contact/">Contact us</a>
     </nav>
   </div>
 </header>

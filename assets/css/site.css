@@ -268,3 +268,18 @@ ul { margin: 0; }
   .footer-grid { grid-template-columns: 1fr; }
   .strip ul { justify-content: flex-start; padding: 16px; }
 }
+
+/* Manufacturing pages */
+.page-head .tag { margin-bottom: 18px; }
+.big-num { font-size: clamp(2.8rem, 6vw, 4.2rem); font-weight: 700; letter-spacing: -.04em; color: var(--ink); line-height: 1; margin: 4px 0 18px; }
+.big-num span { font-size: .42em; color: var(--accent); letter-spacing: 0; }
+.card.stat { border-right: 1px solid var(--line); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--white); }
+.table { width: 100%; border-collapse: collapse; font-size: .93rem; min-width: 620px; }
+.table th, .table td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.table th { background: var(--sand); color: var(--ink); font-weight: 600; font-size: .85rem; }
+.table tr:last-child td { border-bottom: 0; }
+.table td:first-child { font-weight: 600; color: var(--ink); white-space: nowrap; }
+@media (min-width: 1001px) {
+  .nav > ul > li:last-child .menu { left: auto; right: 0; }
+}
