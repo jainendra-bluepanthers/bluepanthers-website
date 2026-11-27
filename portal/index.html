@@ -133,7 +133,7 @@ async function gcm(keyBytes,box){
 }
 const importPriv=der=>crypto.subtle.importKey('pkcs8',der,{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
 async function login(email,pw){
-  const K=await get('keys.json');if(!K||!K.slots.length)throw new Error('nokeys');
+  const K=await get('/portal/keys.json');if(!K||!K.slots.length)throw new Error('nokeys');
   const id=hex(await crypto.subtle.digest('SHA-256',te.encode('bpm-portal:'+email.trim().toLowerCase())));
   const slot=K.slots.find(s=>s.id===id)||K.slots[0];
   const base=await crypto.subtle.importKey('raw',te.encode(pw.normalize('NFC')),'PBKDF2',false,['deriveBits']);
@@ -150,10 +150,10 @@ function logout(note){try{sessionStorage.removeItem('bpm_portal')}catch(e){}S=nu
   $('#app').hidden=true;$('#login').hidden=false;$('#pw').value='';$('#er').textContent=note||'';history.replaceState(null,'',location.pathname)}
 /* Returns 'ok', 'same', 'none' (no status yet) or 'relogin' (logins changed since this session started). */
 async function load(){
-  const D=await get('data.json');
+  const D=await get('/portal/data.json');
   if(!D){S=S||null;return 'none'}
   if(D.h===H&&S)return 'same';
-  if(D.kid!==kid){const K=await get('keys.json');return K&&K.kid!==kid?'relogin':'pending'}
+  if(D.kid!==kid){const K=await get('/portal/keys.json');return K&&K.kid!==kid?'relogin':'pending'}
   const key=await crypto.subtle.decrypt({name:'RSA-OAEP'},priv,ub(D.box.w));
   S=JSON.parse(td.decode(await gcm(key,D.box)));H=D.h;return 'ok';
 }
