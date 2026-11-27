@@ -1,0 +1,78 @@
+name: Portal refresh
+
+# Rebuilds the team portal's status (bluepanthers.in/portal/) from the tracker Google Sheets.
+# Reads the sheets read-only, encrypts the result for the team and publishes it only when
+# something changed. Google sign-in is keyless (Workload Identity Federation): no keys stored.
+# Secrets: PORTAL_SHEETS (sheet ids, JSON) and RENDER_DEPLOY_HOOK (already used by deploy.yml).
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"   # every 15 minutes
+  workflow_dispatch:
+  push:
+    branches: [main, portal-auto-refresh]
+    paths:
+      - portal/keys.json
+      - portal-src/refresh.mjs
+      - portal-src/lib.mjs
+      - .github/workflows/portal-refresh.yml
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: portal-refresh-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  WIF_PROVIDER: projects/400466464027/locations/global/workloadIdentityPools/github/providers/website
+  SERVICE_ACCOUNT: portal-reader@bpm-team-portal.iam.gserviceaccount.com
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sign in to Google (read-only, keyless)
+        id: google
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/spreadsheets.readonly
+          create_credentials_file: false
+
+      - name: Read the sheets and rebuild the portal data
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+          PORTAL_SHEETS: ${{ secrets.PORTAL_SHEETS }}
+        run: node portal-src/refresh.mjs
+
+      - name: Publish if anything changed
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if git diff --quiet -- portal/data.json && git ls-files --error-unmatch portal/data.json >/dev/null 2>&1; then
+            echo "Nothing to publish."; exit 0
+          fi
+          git config user.name "portal-refresh"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add portal/data.json
+          git commit -q -m "Portal: status refreshed from the trackers"
+          git pull -q --rebase origin "${GITHUB_REF_NAME}"
+          git push -q origin "HEAD:${GITHUB_REF_NAME}"
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            test -n "$HOOK" || { echo "::error::RENDER_DEPLOY_HOOK secret is missing"; exit 1; }
+            curl -fsS -X POST "$HOOK" > /dev/null
+            echo "Published; Render deploy triggered."
+          else
+            echo "Committed to ${GITHUB_REF_NAME} (test branch): not deployed."
+          fi

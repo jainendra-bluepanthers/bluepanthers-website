@@ -1,3 +1,8 @@
 .DS_Store
 .netlify/
 node_modules/
+
+# Team portal: who has a login and the sheet ids stay on this computer
+portal-src/members.json
+portal-src/sheets.json
+portal-src/status.json
