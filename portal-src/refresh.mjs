@@ -266,6 +266,62 @@ function buildHLT(book) {
   return { quotes, key };
 }
 
+// ---------------------------------------------------------------- daily progress (outreach and quotes by date)
+// Rebuilt on every run from dates already in the sheets: the RFQ sent / Follow-up / Quote received
+// columns, and notes written as "27 Nov: follow-up sent" or "Enquiry sent 25 Nov". Only daily counts
+// per vertical leave this function; company names and note text do not.
+const MON_RE = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
+const THEIRS = /\b(received|replied|acknowledg\w*|confirmed|apologi[sz]ed|promised|quoted|answered)\b|\bsent (?:the |a |an |their |us )?(?:basis|bod|sheet|offer|quote|quotation|proposal|sample|price|catalogue|brochure|coa)/i;
+const kindOf = desc => {
+  const s = desc.toLowerCase();
+  if (/not received|no reply|awaiting|drafted|reply by/.test(s) && !/\bsent\b/.test(s.replace(/reply by.*$/, ''))) return '';
+  if (THEIRS.test(s) && !/not received/.test(s)) return 'reply';
+  if (/\b(sent|resent|emailed)\b/.test(s)) return /follow|remind|chase|resen|again/.test(s) ? 'followup' : 'sent';
+  return '';
+};
+function textEvents(text, ref) {
+  const out = [];
+  const seg = new RegExp(`(?:^|[|;.]\\s*)(\\d{1,2}\\s+(?:${MON_RE})[a-z]*(?:\\s+\\d{4})?)\\s*:\\s*([^|]*)`, 'gi');
+  for (const m of String(text || '').matchAll(seg)) {
+    const d = toISO(m[1], ref), k = kindOf(m[2]);
+    if (d && k) out.push({ d, k, quote: k === 'reply' && /quot|offer|proposal|price/i.test(m[2]) });
+  }
+  const verb = new RegExp(`\\b(sent|received|replied|acknowledged)\\s+(?:on\\s+)?(\\d{1,2}\\s+(?:${MON_RE})[a-z]*(?:\\s+\\d{4})?)`, 'gi');
+  for (const m of String(text || '').matchAll(verb)) {
+    const d = toISO(m[2], ref), k = /sent/i.test(m[1]) ? 'sent' : 'reply';
+    if (d) out.push({ d, k, quote: false });
+  }
+  return out;
+}
+function buildProgress(raw) {
+  // raw: [{v, co, texts: [...], cols: [{d, k, quote}]}]
+  const seen = new Set(), ev = [];
+  for (const r of raw) {
+    for (const e of [...r.cols, ...r.texts.flatMap(t => textEvents(t))]) {
+      if (!e.d || e.d > TODAY) continue;
+      const key = `${r.v}|${r.co}|${e.d}|${e.k}`;
+      if (seen.has(key)) { if (e.quote) ev.find(x => x.key === key).quote = true; continue; }
+      seen.add(key); ev.push({ key, v: r.v, d: e.d, k: e.k, quote: e.quote });
+    }
+  }
+  const days = new Map();
+  const day = d => { if (!days.has(d)) days.set(d, { d, cm: { sent: 0, followup: 0, reply: 0 }, rm: { sent: 0, followup: 0, reply: 0 }, eq: { sent: 0, followup: 0, reply: 0 }, quotes: 0 }); return days.get(d); };
+  for (const e of ev) { const x = day(e.d); x[e.v][e.k] += 1; if (e.quote) x.quotes += 1; }
+  return [...days.values()].sort((a, b) => a.d.localeCompare(b.d));
+}
+/** Equipment packages priced over time: the first date each package got a price. */
+function pricedTimeline(eqBook) {
+  const t = table(eqBook.tabs['Suppliers & RFQ'] || [], ['Pkg', 'Supplier', 'Status']);
+  if (!t) return [];
+  const first = new Map();
+  for (const r of t.body) {
+    const pkg = str(cell(r, t.col('Pkg'))), d = toISO(cell(r, t.col('Quote received')));
+    const priced = num(cell(r, t.col('Price ex-GST'))) || num(cell(r, t.col('Phase 1')));
+    if (pkg && d && priced && (!first.has(pkg) || d < first.get(pkg))) first.set(pkg, d);
+  }
+  return [...first.values()].sort();
+}
+
 // ---------------------------------------------------------------- main
 const books = {};
 if (FIXTURE) Object.assign(books, JSON.parse(readFileSync(FIXTURE, 'utf8')));
@@ -279,6 +335,30 @@ const rm = buildRM(books.rm || { tabs: {}, options: {} });
 const eq = buildEQ(books.eq || { tabs: {}, options: {} });
 const hl = buildHLT(books.hlt || { tabs: {}, options: {} });
 if (!cm.rows.length && !rm.rows.length && !eq.rows.length) fail('No rows found in any tracker: not publishing an empty portal.');
+
+// Raw dated activity per company for the progress charts.
+const raw = [];
+for (const [v, key, tab, must, textCols] of [
+  ['cm', 'cm', 'Manufacturers', ['Company', 'Stage'], ['Next action', 'Notes']],
+  ['rm', 'rm', 'Suppliers', ['Material', 'Supplier', 'Stage'], ['Next action', 'Notes']],
+  ['eq', 'eq', 'Suppliers & RFQ', ['Pkg', 'Supplier', 'Status'], ['Remarks', 'Next action']],
+]) {
+  const t = table(books[key]?.tabs?.[tab] || [], must);
+  if (!t) continue;
+  const coCol = v === 'cm' ? 'Company' : 'Supplier';
+  for (const r of t.body) {
+    const co = str(cell(r, t.col(coCol))); if (!co) continue;
+    const cols = v !== 'eq' ? [] : [
+      { d: toISO(cell(r, t.col('RFQ sent'))), k: 'sent', quote: false },
+      { d: toISO(cell(r, t.col('Follow-up'))), k: 'followup', quote: false },
+      { d: toISO(cell(r, t.col('Quote received'))), k: 'reply', quote: true },
+    ].filter(e => e.d);
+    raw.push({ v, co: v === 'rm' ? `${co}|${str(cell(r, t.col('Material')))}` : `${co}|${str(cell(r, t.col('Pkg')))}`,
+      texts: textCols.map(c => (t.col(c) >= 0 ? str(cell(r, t.col(c))) : '')), cols });
+  }
+}
+const activity = buildProgress(raw);
+const pricedDates = pricedTimeline(books.eq || { tabs: {} });
 
 const open = r => !/^(rejected|no response)$/i.test(r.stage);
 const tierN = n => cm.rows.filter(r => r.tier === n).length;
@@ -298,8 +378,21 @@ const status = {
   cm: cm.rows, rm: rm.rows, eq: eq.rows, packages: eq.packages, quotes: hl.quotes, key: hl.key,
   stages: { cm: cm.stages, rm: rm.stages, eq: eq.stages }, notes: { cm: cm.note, rm: rm.cost }, spec: rm.spec,
   summary, links,
+  progress: { activity, priced: pricedDates, pkgTotal: eq.packages.length },
 };
 const h = sha256hex(JSON.stringify(status));
+
+// Daily stage snapshot for the funnel chart. Past snapshots cannot be rebuilt from the sheets, so
+// each day's counts are kept in portal/history.json, encrypted for the team like data.json.
+const countBy = R => R.reduce((a, r) => ((a[r.stage] = (a[r.stage] || 0) + 1), a), {});
+const snapshot = { d: TODAY, cm: countBy(cm.rows), rm: countBy(rm.rows), eq: countBy(eq.rows) };
+const HIST = process.env.PORTAL_HISTORY_FILE || join(ROOT, 'portal', 'history.json');
+function writeHistory(keys) {
+  const hist = existsSync(HIST) ? JSON.parse(readFileSync(HIST, 'utf8')) : { v: 1, days: [] };
+  const entry = { d: TODAY, kid: keys.kid, box: sealForTeam(keys.pub, Buffer.from(JSON.stringify(snapshot))) };
+  hist.days = hist.days.filter(x => x.d !== TODAY).concat(entry).sort((a, b) => a.d.localeCompare(b.d)).slice(-400);
+  writeFileSync(HIST, JSON.stringify(hist) + '\n');
+}
 
 if (argv.includes('--print')) { console.log(JSON.stringify(status, null, 1)); process.exit(0); }
 log(`Read ${Object.keys(books).length} sheets: ${cm.rows.length} + ${rm.rows.length} + ${eq.rows.length} rows.`);
@@ -310,4 +403,5 @@ if (prev && prev.h === h && prev.kid === keys.kid) { log('No change since the la
 const asOf = NOW.toISOString();
 const box = sealForTeam(keys.pub, Buffer.from(JSON.stringify({ ...status, asOf })));
 writeFileSync(OUT, JSON.stringify({ v: 2, kid: keys.kid, h, at: asOf, box }) + '\n');
+writeHistory(keys);
 log(prev && prev.kid !== keys.kid ? 'Logins changed: data re-encrypted.' : 'Changes found: portal/data.json updated.');

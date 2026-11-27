@@ -48,6 +48,16 @@ working once the refresh runs.
   drafts not yet sent are due now. Add a "Next follow-up" or "Next action" column to set them yourself.
 - High level tracker, tabs Quotes in hand (equipment rows) and Key dates.
 
+## Daily progress tab
+- Emails sent, replies received and quotes per day are rebuilt on every refresh from dates already in
+  the sheets: the RFQ sent / Follow-up / Quote received columns, and notes written as
+  "27 Nov: follow-up sent", "27 Nov: offer received" or "Enquiry sent 25 Nov". Notes without a date
+  are not counted, so keep writing the date first.
+- The stage-by-date charts need one snapshot per day, which the sheets cannot give afterwards. Each
+  refresh that finds a change saves today's stage counts to `portal/history.json`, encrypted for the
+  team like `data.json`. Making a new team key (removing someone) leaves older snapshots unreadable;
+  the charts then start again from that day.
+
 Columns are found by their header names, so moving or adding columns is fine; renaming a header
 or a tab above stops that part from showing.
 
