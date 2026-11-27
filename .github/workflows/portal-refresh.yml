@@ -7,7 +7,7 @@ name: Portal refresh
 
 on:
   schedule:
-    - cron: "7,22,37,52 * * * *"   # every 15 minutes
+    - cron: "*/5 * * * *"   # asks for every 5 minutes; GitHub runs it less often when busy
   workflow_dispatch:
   push:
     branches: [main, portal-auto-refresh]

@@ -2,7 +2,7 @@
 
 A login page where the team sees where we are on contract manufacturing, raw materials and
 plant equipment. It reads the tracker Google Sheets by itself: edit a sheet, and the portal
-shows the change within about 15 minutes. Nobody needs to publish anything for that.
+shows the change at the next refresh (usually within 15-30 minutes). Nobody needs to publish anything for that.
 
 The repository is public, so everything committed here is either generic code or encrypted.
 
@@ -10,7 +10,8 @@ The repository is public, so everything committed here is either generic code or
 - `portal/index.html` is the page. It holds no data.
 - `portal/keys.json` holds the logins: the team key, locked once per person with their password.
 - `portal/data.json` holds the status, encrypted so only the team key opens it.
-- `.github/workflows/portal-refresh.yml` runs every 15 minutes. It signs in to Google with
+- `.github/workflows/portal-refresh.yml` asks GitHub to run it every 5 minutes (GitHub runs
+  scheduled jobs less often when it is busy; "Run workflow" on the Actions tab runs it at once). It signs in to Google with
   read-only access (keyless, through Workload Identity Federation), runs `refresh.mjs` to read
   the sheets and rebuild `data.json`, and when something changed commits it and asks Render to
   deploy. It never needs a password.
