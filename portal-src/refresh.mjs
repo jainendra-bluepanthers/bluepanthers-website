@@ -243,7 +243,8 @@ function buildEQ(book) {
   const packages = [...pk.values()].sort((a, b) => a.k.localeCompare(b.k, 'en', { numeric: true })).map(p => {
     const R = rows.filter(r => r.pkg === p.k);
     const prices = (t ? t.body : []).filter(r => str(cell(r, t.col('Pkg'))) === p.k).map(r => num(cell(r, t.col('Price ex-GST')))).filter(x => x > 0);
-    return { ...p, suppliers: R.length, contacted: R.filter(r => r.sent).length, priced: prices.length,
+    // Priced = suppliers with any price (main or phase 1); lowest quote compares the main price only.
+    return { ...p, suppliers: R.length, contacted: R.filter(r => r.sent).length, priced: R.filter(r => r.priced).length,
       low: prices.length ? +(Math.min(...prices) / 1e5).toFixed(2) : null };
   });
   return { rows, stages, packages };
